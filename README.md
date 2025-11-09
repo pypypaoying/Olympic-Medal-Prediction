@@ -28,8 +28,7 @@ Example forecasts for 2028:
 
 This setup achieves high accuracy by customizing models to each tier's characteristics.
 
-![Model Architecture](figures/model_architecture.png)  
-*(Diagram showing data inputs, tier-specific models, and forecast outputs.)*
+<img width="1120" height="473" alt="030879cd227aa67fcc1dff19bde67b79" src="https://github.com/user-attachments/assets/8d1a6c32-d8c3-417a-a6b5-ebbfcd59481d" />
 
 ## Installation
 
