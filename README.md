@@ -72,9 +72,13 @@ Pull requests welcome. For issues, open a GitHub issue.
 
 If using this code, cite:
 @article{olympic_medal_prediction_2025,
+
 title={Tier-Specific Models for Olympic Medal Prediction},
-author={Zhixuan Huo},
+
+author={Zhixuan Huo,Yanfei Wu,Depeng Guo},
+
 year={2025},
+
 journal={Your Journal}
 }
 ## License
