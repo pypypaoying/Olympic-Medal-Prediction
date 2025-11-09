@@ -50,6 +50,7 @@ Run the full pipeline:python main.py --data_path data/historical_medals.csv --ou
   - `emerging_countries.py`: RF for emerging nations.
   - `non_medal_countries.py`: Logistic Regression for non-medal nations.
   - `classification.py`: XGBoost for initial tier classification.
+  - `host impact.py`: quantifying for the host impact.
 
 For evaluation:
 python evaluate.py --model_path models/gbdt_model.pkl --test_data data/test.csv
