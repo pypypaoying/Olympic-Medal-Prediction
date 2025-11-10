@@ -13,9 +13,9 @@ import tensorflow as tf
 warnings.filterwarnings("ignore")
 
 # ============= CONFIG =============
-EXCEL_PATH = "medium-level countries.xlsx"
-OUTPUT_CSV = "medium_medal_predictions_gru.csv"
-R2_PDF_PATH = "medium_r2_comparison_gru.pdf"
+EXCEL_PATH = "medium_level_corrected.xlsx"  # Input Excel file
+OUTPUT_CSV = "medium_medal_predictions_gru.csv"  # Output results CSV
+R2_PDF_PATH = "medium_r2_comparison_gru.pdf"  # R² chart output
 RANDOM_SEED = 42
 EPOCHS = 150
 BATCH_SIZE = 8
@@ -25,12 +25,13 @@ np.random.seed(RANDOM_SEED)
 tf.random.set_seed(RANDOM_SEED)
 
 def load_data(path):
+    """Load and clean dataset"""
     df = pd.read_excel(path)
     df.columns = [c.strip() for c in df.columns]
     return df
 
 def build_gru_model(input_shape):
-    """构建 GRU 模型"""
+    """Build a GRU model for medal prediction"""
     model = Sequential([
         GRU(64, input_shape=input_shape, return_sequences=False),
         Dropout(0.2),
@@ -41,7 +42,7 @@ def build_gru_model(input_shape):
     return model
 
 def predict_features_2028(df_noc, features):
-    """线性预测 2028 年的输入特征"""
+    """Predict input features for the year 2028 using simple linear trends"""
     years = df_noc["Year"].values.reshape(-1, 1)
     preds = {}
     for f in features:
@@ -54,7 +55,7 @@ def predict_features_2028(df_noc, features):
     return preds
 
 def fit_and_predict_gru(df_noc, features, target):
-    """使用 GRU 拟合单个国家单个奖牌类型的时间序列"""
+    """Train GRU model for a single NOC and a single medal type"""
     df_clean = df_noc.dropna(subset=features + [target])
     if len(df_clean) < 5:
         return np.nan, np.nan, np.nan, np.nan
@@ -69,7 +70,7 @@ def fit_and_predict_gru(df_noc, features, target):
     X_scaled = scaler_X.fit_transform(X)
     y_scaled = scaler_y.fit_transform(y.reshape(-1, 1))
 
-    # GRU 输入形状为 (样本数, 时间步, 特征数)
+    # Prepare time series sequences for GRU input
     X_seq, y_seq = [], []
     seq_len = 3
     for i in range(len(X_scaled) - seq_len):
@@ -83,18 +84,18 @@ def fit_and_predict_gru(df_noc, features, target):
     model = build_gru_model((seq_len, X_seq.shape[2]))
     model.fit(X_seq, y_seq, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=0)
 
-    # 计算 R²
+    # Compute R² on training sequence
     y_pred_scaled = model.predict(X_seq, verbose=0)
     y_pred = scaler_y.inverse_transform(y_pred_scaled)
     y_true = scaler_y.inverse_transform(y_seq)
     r2 = r2_score(y_true, y_pred)
 
-    # 预测 2028
+    # Predict for year 2028
     feat_2028 = predict_features_2028(df_clean, features)
     x_2028 = np.array([feat_2028[f] for f in features]).reshape(1, -1)
     x_2028_scaled = scaler_X.transform(x_2028)
 
-    # 用最近 seq_len 年的数据预测未来
+    # Use the last seq_len years as input for future prediction
     last_seq = X_scaled[-seq_len:]
     new_seq = np.concatenate([last_seq[1:], x_2028_scaled], axis=0)
     new_seq = new_seq.reshape(1, seq_len, X_seq.shape[2])
@@ -113,7 +114,7 @@ def main():
         "Gold": "Total number of gold medals",
         "Silver": "Total number of silver medals",
         "Bronze": "Total number of bronze medals",
-        "Total": "medal_score"
+        "Total": "medal_score_y"
     }
 
     nocs_2024 = df.loc[df["Year"] == 2024, "NOC"].unique()
@@ -146,13 +147,13 @@ def main():
                     "R² Value": r2_entry[f"{medal_type}_r2"]
                 })
 
-    # === 保存预测结果 ===
+    # === Save model predictions ===
     df_res = pd.DataFrame(results)
     df_r2 = pd.DataFrame(r2_records)
     df_res.to_csv(OUTPUT_CSV, index=False)
     print(f"✅ Saved GRU prediction summary to {OUTPUT_CSV}")
 
-    # === 可视化 R² ===
+    # === Visualize R² values ===
     if all_results:
         r2_df = pd.DataFrame(all_results)
         medal_types = ['Gold', 'Silver', 'Bronze', 'Total']
@@ -176,6 +177,7 @@ def main():
             linewidth=1.0
         )
 
+        # Add labels above bars
         for container in ax.containers:
             ax.bar_label(container, fmt='%.3f', label_type='edge', padding=3,
                          fontsize=9, color='black', weight='bold')
